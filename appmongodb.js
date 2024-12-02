@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
-const uri = MONGO_URI;
+const url = MONGO_URI;
 const dbName = 'studentsdb';
 let db;
 
@@ -23,7 +23,7 @@ let db;
 // Start the server
 async function startServer() {
     try {
-        const client = await MongoClient.connect(uri);
+        const client = await MongoClient.connect(url);
         db = client.db(dbName);
         console.log('Connected to MongoDB');
 
