@@ -15,7 +15,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
-const uri = MongoURI;
+const uri = MONGO_URI;
 const dbName = 'studentsdb';
 let db;
 
