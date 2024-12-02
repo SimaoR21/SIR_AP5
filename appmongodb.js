@@ -23,7 +23,7 @@ let db;
 // Start the server
 async function startServer() {
     try {
-        const client = await MongoClient.connect(url);
+        const client = await MongoClient.connect(uri);
         db = client.db(dbName);
         console.log('Connected to MongoDB');
 
