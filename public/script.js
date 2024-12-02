@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentStudyInput = document.getElementById('student-study');
     const submitButton = document.getElementById('submit-button');
 
-    const apiUrl = 'http://localhost:3000/students';
+    const apiUrl = 'https://sir-ap5.onrender.com/students';
 
     // Fetch and display students
     // TODO: This can be improved to avoid calling the updateStudent 
