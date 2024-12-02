@@ -1,156 +1,120 @@
+/**
+ * @file script.js
+ * @description This file contains the JavaScript code for handling the frontend logic of the web application.
+ * @version 1.0.0
+ * @date 2024-11-20
+ * @author Pedro Moreira
+ * @organization ESTG-IPVC
+ */
 
-// Inicializar a lista
-// Função para adicionar um novo item à tabela
-// Função para adicionar um novo item à tabela
-async function createNewItem() {
-  const name = document.getElementById('name').value;
-  const course = document.getElementById('course').value;
-  const year = document.getElementById('year').value;
+// using DOMContentLoaded
+// alternatively "defer" attribute could be used in the <script> element 
+// to prevent running the script before the page is loaded.
+document.addEventListener('DOMContentLoaded', () => {
+    const studentTable = document.getElementById('itemsTable');
+    const studentForm = document.getElementById('student-form');
+    const studentNameInput = document.getElementById('student-name');
+    const studentAgeInput = document.getElementById('student-age');
+    const studentStudyInput = document.getElementById('student-study');
+    const submitButton = document.getElementById('submit-button');
 
-  if (!name || !course || !year) {
-    alert('Por favor, preencha todos os campos!');
-    return;
-  }
+    const apiUrl = 'http://localhost:3000/students';
 
-  const newItem = { name, course, year };
+    // Fetch and display students
+    // TODO: This can be improved to avoid calling the updateStudent 
+    // if even after after editing a field it has not been updated
 
-  try {
-    // Adiciona o novo item via API
-    const response = await fetch('/api/students', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newItem),
+    const fetchStudents = async () => {
+        const response = await fetch(apiUrl);
+        const students = await response.json();
+        const tbody = studentTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        students.forEach(student => {
+
+            // <element>.dataset property is used to store information
+            // TODO :: the cells from column id could be a hidden
+            const tr = document.createElement('tr');
+            tr.dataset.id = student._id;
+
+            const idTd = document.createElement('td');
+            idTd.textContent = student._id;
+
+            const nameTd = document.createElement('td');
+            nameTd.contentEditable = true;
+            nameTd.textContent = student.name;
+            nameTd.addEventListener('blur', () => updateStudent(student._id, nameTd.textContent, ageTd.textContent, studyTd.textContent));
+
+            const ageTd = document.createElement('td');
+            ageTd.contentEditable = true;
+            ageTd.textContent = student.age;
+            ageTd.addEventListener('blur', () => updateStudent(student._id, nameTd.textContent, ageTd.textContent, studyTd.textContent));
+
+            const studyTd = document.createElement('td');
+            studyTd.contentEditable = true;
+            studyTd.textContent = student.study;
+            studyTd.addEventListener('blur', () => updateStudent(student._id, nameTd.textContent, ageTd.textContent, studyTd.textContent));
+
+            const actionsTd = document.createElement('td');
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.addEventListener('click', () => deleteStudent(student._id));
+
+            actionsTd.appendChild(deleteButton);
+
+            tr.appendChild(idTd);
+            tr.appendChild(nameTd);
+            tr.appendChild(ageTd);
+            tr.appendChild(studyTd);
+            tr.appendChild(actionsTd);
+
+            tbody.appendChild(tr);
+        });
+    };
+
+    // Add new student
+    studentForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = studentNameInput.value;
+        const age = studentAgeInput.value;
+        const study = studentStudyInput.value;
+
+        const student = { name, age, study };
+
+        await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(student)
+        });
+
+        studentForm.reset();
+        fetchStudents();
     });
 
-    if (response.ok) {
-      // Recarregar a tabela para refletir o novo item
-      loadStudents();
-    }
-  } catch (error) {
-    console.error('Erro ao adicionar estudante:', error);
-  }
+    // Update (save) student
+    const updateStudent = async (id, name, age, study) => {
+        const student = { name, age, study };
 
-  // Limpar os campos de entrada
-  document.getElementById('name').value = '';
-  document.getElementById('course').value = '';
-  document.getElementById('year').value = '';
-}
+        await fetch(`${apiUrl}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(student)
+        });
 
+        fetchStudents();
+    };
 
-// Função para editar o item
-function editItem(id) {
-  const row = document.getElementById(`item-${id}`);
-  const cells = row.getElementsByTagName('td');
+    // Delete student
+    const deleteStudent = async (id) => {
+        await fetch(`${apiUrl}/${id}`, {
+            method: 'DELETE'
+        });
+        fetchStudents();
+    };
 
-  if (row.getAttribute('data-editing') === 'true') return;
-
-  row.setAttribute('data-editing', 'true');
-  cells[1].setAttribute('contenteditable', 'true');
-  cells[2].setAttribute('contenteditable', 'true');
-  cells[3].setAttribute('contenteditable', 'true');
-
-  const editButton = cells[4].getElementsByTagName('button')[0];
-  editButton.textContent = 'Salvar';
-  editButton.setAttribute('onclick', `saveItem(${id})`);
-}
-
-// Função para salvar as alterações do item
-// Função para salvar as alterações do item
-async function saveItem(id) {
-  const row = document.getElementById(`item-${id}`);
-  const cells = row.getElementsByTagName('td');
-
-  // Coletar valores atualizados
-  const updatedName = cells[1].textContent.trim();
-  const updatedCourse = cells[2].textContent.trim();
-  const updatedYear = cells[3].textContent.trim();
-
-  // Validação
-  if (!updatedName || !updatedCourse || !updatedYear) {
-    alert('Por favor, preencha todos os campos!');
-    return;
-  }
-
-  // Requisição para atualizar no servidor
-  try {
-    const response = await fetch(`/api/students/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: updatedName,
-        course: updatedCourse,
-        year: updatedYear
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao atualizar estudante! Status: ${response.status}`);
-    }
-
-    // Confirmar alteração no front-end
-    row.removeAttribute('data-editing');
-    cells[1].setAttribute('contenteditable', 'false');
-    cells[2].setAttribute('contenteditable', 'false');
-    cells[3].setAttribute('contenteditable', 'false');
-
-    const editButton = cells[4].getElementsByTagName('button')[0];
-    editButton.textContent = 'Editar';
-    editButton.setAttribute('onclick', `editItem(${id})`);
-
-    alert('Estudante atualizado com sucesso!');
-  } catch (error) {
-    console.error('Erro ao atualizar o estudante:', error);
-  }
-}
-
-// Função para excluir o item
-function deleteItem(id) {
-  const row = document.getElementById(`item-${id}`);
-  row.remove();
-}
-
-// Função para carregar os estudantes da API e inserir na tabela
-// Esta é a função para carregar os estudantes
-// Corrija a URL para incluir "/api/students"
-async function loadStudents() {
-  try {
-    const response = await fetch('/api/students', { cache: 'no-store' }); // Corrigido para "/api/students"
-    if (!response.ok) {
-      throw new Error(`Erro HTTP! Status: ${response.status}`);
-    }
-
-    const students = await response.json();
-    const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
-    
-    // Limpar a tabela antes de adicionar novos itens
-    table.innerHTML = '';
-
-    students.forEach((student) => {
-      const newRow = table.insertRow();
-      newRow.setAttribute('id', `item-${student.id}`);
-
-      newRow.innerHTML = `
-        <td>${student.id}</td>
-        <td contenteditable="false">${student.name}</td>
-        <td contenteditable="false">${student.course}</td>
-        <td contenteditable="false">${student.year}</td>
-        <td>
-          <button onclick="editItem(${student.id})">Editar</button>
-          <button onclick="deleteItem(${student.id})">Remover</button>
-        </td>
-      `;
-    });
-  } catch (error) {
-    console.error('Erro ao carregar os estudantes:', error);
-  }
-}
-
-// Carregar os estudantes ao iniciar a página
-window.onload = loadStudents;
-
-
-
+    fetchStudents();
+});
